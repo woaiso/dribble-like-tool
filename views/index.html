@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>66刷赞控制台</title>
+    <style>
+        * {
+            outline: none;
+        }
+
+        .content {
+            width: 640px;
+            margin: 60px auto;
+        }
+
+        .title {
+            text-align: center;
+        }
+
+        .link-item {
+            display: flex;
+            margin: 10px 0;
+            align-items: center;
+        }
+
+        .url {
+            height: 32px;
+            line-height: 30px;
+            padding: 0 10px;
+            flex: 1;
+            border: none;
+            background: #f3f3f3;
+            outline: none;
+            border-radius: 6px;
+        }
+
+        #loopTime {
+            width: 80px;
+            margin-left: 16px;
+        }
+
+        .buttons {
+            display: flex;
+            padding: 10px 0;
+        }
+
+        .submit-button, .reset-button {
+            flex: 1;
+            height: 36px;
+            border: none;
+            border-radius: 6px;
+            background: #ffa7a6;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .reset-button {
+            margin-left: 16px;
+            background: #dcdcdc;
+        }
+
+        .passport {
+            margin-top: 32px;
+            padding: 20px 10px;
+            background: #f4f4f4;
+            border-radius: 6px;
+        }
+
+        .passport-title {
+            padding: 0 20px 10px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #666;
+        }
+
+        .box {
+            display: flex;
+        }
+
+        .flex {
+            flex: 1;
+        }
+
+        .input {
+            width: auto;
+            min-width: 249px;
+            height: 36px;
+            padding: 0 10px;
+            border: none;
+            border-radius: 6px;
+            background: #d8d8d8;
+            font-size: 16px;
+        }
+
+        #loopTime {
+            height: 36px;
+            border: none;
+        }
+        .user-item{
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .sub-title {
+            display: flex;
+            align-items: center;
+        }
+
+        .add-button {
+            width: 24px;
+            height: 24px;
+            margin-left: 8px;
+            border: none;
+            background: url('/imgs/ic_plus.png') center 100%;
+            background-size: 100%;
+            cursor: pointer;
+        }
+
+        .delete-button {
+            width: 24px;
+            height: 24px;
+            margin-left: 8px;
+            border: none;
+            background: url('/imgs/ic_minus.png') center 100%;
+            background-size: 100%;
+            cursor: pointer;
+        }
+
+        .passport-area {
+            display: flex;
+        }
+
+        .passport-area textarea {
+            flex: 1;
+            border: 1px solid #d8d8d8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="main-content">
+        <div class="content" id="app">
+            <h1 class="title">{{title}}</h1>
+            <h3 class="sub-title">配置链接<button class="add-button" title="新增一条配置链接" v-on:click="addLink"/></h3>
+            <div class="links">
+                <div class="link-item" v-for="(link, index) in links">
+                    <input type="text" class="url" v-model="link.url" placeholder="输入链接">
+                    <select name="loopTime" id="loopTime">
+                        <option value="12">12个小时</option>
+                        <option value="6">6个小时</option>
+                    </select>
+                    <button class="delete-button" title="删除当前这条数据" v-if="links.length > 1" v-on:click="deleteLink(index)"/>
+                </div>
+            </div>
+            <h3 class="sub-title">配置账号密码（批量导入）</h3>
+            <div class="passport passport-area">
+                <textarea v-model="multiplePassport" placeholder="导入样例一行一个账号密码：&#10;10086@qq.com 123456&#10;10010@qq.com 123456" cols="30" rows="10"></textarea>
+            </div>
+            <!-- <h3 class="sub-title" >配置账号密码（手动配置）<button class="add-button" v-on:click="addUser" title="新增账号密码"  v-on:click="addUser"/></h3>
+            <div class="passport">
+                <div class="box">
+                    <div class="flex passport-title">账号</div>
+                    <div class="flex passport-title">密码</div>
+                </div>
+                <div>
+                    <div class="box user-item" v-for="(user, index) in users">
+                        <div class="flex input-warp">
+                            <input v-model="user.name" class="input"/>
+                        </div>
+                        <div class="flex input-warp">
+                            <input v-model="user.password" class="input"/>
+                        </div>
+                        <button class="delete-button" title="删除当前这条数据" v-if="users.length > 1" v-on:click="deleteUser(index)"/>
+                    </div>
+                </div>
+            </div> -->
+            <div class="buttons">
+                <button class="submit-button" v-on:click="submit">开始</button>
+                <button class="reset-button">复位</button>
+            </div>
+            <div class="log">
+                <h2 class="title">日志</h2>
+                <div class="log-content">
+                    <div class="log-item">[2018-03-22 11:22:00] 功能启动</div>
+                    <div class="log-item">[2018-03-22 11:22:00] 开始登录 username:*********</div>
+                    <div class="log-item">[2018-03-22 11:22:00] 登录成功 username:*********</div>
+                    <div class="log-item">[2018-03-22 11:22:00] 开始点赞 +1👍</div>
+                    <div class="log-item">[2018-03-22 11:22:00] 点赞成功 当前赞 9827</div>
+                </div>
+                <div class="for-test">
+                    <div class="item" v-for="link in links">{{link.url}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="//cdn.jsdelivr.net/npm/vue"></script>
+    <script src="//cdn.bootcss.com/axios/0.18.0/axios.min.js"></script>
+    <script src="/js/worker.js"></script>
+</body>
+
+</html>
