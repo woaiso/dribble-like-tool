@@ -1,15 +1,18 @@
 {
   "name": "dribble-like-tool",
   "version": "1.0.0",
-  "description": "",
+  "description": "dribbble auto like tools",
   "main": "woker.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:woaiso/dribble-like-tool.git"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@google-cloud/firestore": "^0.13.1",
     "axios": "^0.18.0",
     "axios-https-proxy-fix": "^0.17.1",
     "cheerio": "^1.0.0-rc.2",
@@ -19,7 +22,8 @@
     "koa-ejs": "^4.1.1",
     "koa-router": "^7.4.0",
     "koa-static": "^4.0.2",
-    "lodash": "^4.17.5"
+    "lodash": "^4.17.5",
+    "redis": "^2.8.0"
   },
   "devDependencies": {}
 }
