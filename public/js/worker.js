@@ -64,6 +64,7 @@ const app = new Vue({
                 links: links
             }).then(res => {
                 const data = res.data;
+                alert('开始执行任务, 请勿刷新页面');
                 console.log(data);
             })
         }
