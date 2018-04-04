@@ -65,10 +65,10 @@ async function request(options) {
                 referer: options.url,
                 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36',
             },
-            proxy: {
-                host: '127.0.0.1',
-                port: '1087'
-            }
+            // proxy: {
+            //     host: '127.0.0.1',
+            //     port: '1087'
+            // }
         }
         const requestOptions = _.merge(defaultOptions, options);
         if (cookies._dribbble_session) {

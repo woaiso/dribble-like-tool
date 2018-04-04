@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/firestore": "^0.13.1",
     "axios": "^0.18.0",
     "axios-https-proxy-fix": "^0.17.1",
     "cheerio": "^1.0.0-rc.2",
