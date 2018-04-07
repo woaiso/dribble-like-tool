@@ -14,7 +14,11 @@ const app = new Vue({
         users: [
             { name: '', password: '' }
         ],
-        multiplePassport: '1757914094@qq.com\tabc123\n242546279@qq.com\tabc123\n1593574860@qq.com\tabc123\n1490659434@qq.com\tabc123'
+        multiplePassport: '1757914094@qq.com\tabc123\n242546279@qq.com\tabc123\n1593574860@qq.com\tabc123\n1490659434@qq.com\tabc123',
+        logs: []
+    },
+    created: function(){
+        this.getLogs();
     },
     methods: {
         addLink: function () {
@@ -66,6 +70,19 @@ const app = new Vue({
                 const data = res.data;
                 alert('开始执行任务, 请勿刷新页面');
                 console.log(data);
+            })
+        },
+        getLogs: function () {
+            axios.post('/logs', {
+                lastkey: null
+            }).then(res => {
+                const { data } = res
+                if(+data.code === 0) {
+                    this.logs = this.logs.concat(data.data);
+                    console.log(this.logs);
+                } else {
+                    console.log('日志获取失败');
+                }
             })
         }
     }

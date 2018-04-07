@@ -139,6 +139,18 @@
             flex: 1;
             border: 1px solid #d8d8d8;
         }
+
+        .log-content {
+            height: 300px;
+            overflow: auto;
+        }
+
+        .log-item {
+            font-size: 12px;
+            white-space: nowrap;
+            font-family: Courier New, Consolas, Menlo;
+            color: #333;
+        }
     </style>
 </head>
 
@@ -150,7 +162,7 @@
             <div class="links">
                 <div class="link-item" v-for="(link, index) in links">
                     <input type="text" class="url" v-model="link.url" placeholder="输入链接">
-                    <select name="loopTime" id="loopTime">
+                    <select name="loopTime" id="loopTime" v-model="link.loop">
                         <option value="12">12个小时</option>
                         <option value="6">6个小时</option>
                     </select>
@@ -186,14 +198,7 @@
             <div class="log">
                 <h2 class="title">日志</h2>
                 <div class="log-content">
-                    <div class="log-item">[2018-03-22 11:22:00] 功能启动</div>
-                    <div class="log-item">[2018-03-22 11:22:00] 开始登录 username:*********</div>
-                    <div class="log-item">[2018-03-22 11:22:00] 登录成功 username:*********</div>
-                    <div class="log-item">[2018-03-22 11:22:00] 开始点赞 +1👍</div>
-                    <div class="log-item">[2018-03-22 11:22:00] 点赞成功 当前赞 9827</div>
-                </div>
-                <div class="for-test">
-                    <div class="item" v-for="link in links">{{link.url}}</div>
+                    <div class="log-item" v-for="log in logs">{{log}}</div>
                 </div>
             </div>
         </div>

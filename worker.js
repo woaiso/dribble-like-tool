@@ -4,7 +4,25 @@ const fs = require('fs');
 const cookie = require('cookie');
 const _ = require('lodash');
 const axios = require('axios-https-proxy-fix');  //修复了无法使用代理的问题
+const db = require('./db');
+const moment = require('moment');
 
+
+// 全局唯一定时器
+let timer = null;
+// 定时器执行时间间隔
+const delay = 10 * 60 * 1000; // 10分钟执行一次
+
+const nexJobRange = 1 * 60 * 60 * 1000 // 获取接下来多少时间内的任务，暂定获取接下来一分钟内的任务
+
+const sleepTime = 1000; // 执行完一次请求的休眠时间
+
+
+/**
+ * 写文件
+ * @param {string} fileName 文本文件名称
+ * @param {string} string 文本内容 
+ */
 function writeFile(fileName, string) {
     fs.writeFile(`/tmp/${fileName}`, string, function (err) {
         if (err) {
@@ -14,27 +32,22 @@ function writeFile(fileName, string) {
     });
 }
 
-function fix2number(n) {
-    return [0, n].join('').slice(-2);
-}
 function getTime(format) {
-    const curdate = new Date();
-    if (format == undefined) return curdate;
-    format = format.replace(/Y/i, curdate.getFullYear());
-    format = format.replace(/m/i, fix2number(curdate.getMonth() + 1));
-    format = format.replace(/d/i, fix2number(curdate.getDate()));
-    format = format.replace(/H/i, fix2number(curdate.getHours()));
-    format = format.replace(/i/i, fix2number(curdate.getMinutes()));
-    format = format.replace(/s/i, fix2number(curdate.getSeconds()));
-    format = format.replace(/ms/i, curdate.getMilliseconds());
-    return format;
+    if (format) {
+        return moment().format(format);
+    } else {
+        return moment().format('YYYY-MM-DD HH:mm:ss');
+    }
 }
 
 function log(message) {
     if (typeof message === 'object') {
         message = JSON.stringify(message);
     }
-    console.log(`[${getTime('Y-m-d H:i:s')}]:${message}`);
+    const key = `dribbble_tool:log:${getTime('YmdHisms')}:${Math.ceil(Math.random() * 1000)}`;
+    const value = `[${getTime('YYYY-MM-DD HH:mm:ss')}] ${message}`;
+    db.zadd(`dribbble_tool:log:${getTime('YYYYMMDD')}`,getTime('mmssSSS') + ''+ Math.ceil(Math.random() * 1000 + 1000) ,value)
+    console.log(value);
 }
 /**
  * 获取一个代理服务器
@@ -54,7 +67,8 @@ let cookies = {
  * @param {object} options 网络请求的配置
  */
 async function request(options) {
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+        await sleep(sleepTime);
         const defaultOptions = {
             method: 'GET',
             maxRedirects: 0,
@@ -226,6 +240,11 @@ async function getUserInfo(passport) {
     });
 }
 
+/**
+ * 点赞
+ * @param {string} shotUrls 作品链接
+ * @param {User} user 登录的用户信息 
+ */
 async function rate(shotUrls = [], user) {
     if (shotUrls && user) {
         const userInfo = await getUserInfo(user);
@@ -240,13 +259,46 @@ async function rate(shotUrls = [], user) {
     }
 }
 
-module.exports = async function exec(shotUrls = [], users =[]) {
+/**
+ * 添加定时任务
+ * @param {Array<Link>} links 链接组信息 
+ * @param {Array<User>} users 用户组信息
+ */
+async function addJob(links = [], users = []) {
+    // 计算出每个任务的执行时间，按照URL来进行拆分
+    // 存储所有的任务
+    const jobs = [];
+    // 用户总数量
+    const userCount = users.length;
+    // 链接数量
+    const linkCount = links.length;
+    links.forEach(link => {
+        const { loop, url } = link;
+        const jobLoopMilSeconds = loop * 60 * 60 * 1000;
+        // 执行第一个任务的时间
+        const startTime = new Date().getTime() + 10000;
+        // 得到每个用户应该间隔的时间
+        const step = Math.ceil(jobLoopMilSeconds / userCount)
+        users.forEach((user, index) => {
+            const job = { user, url, time: startTime + index * step };
+            // 添加任务
+            const key = `dribbble_tool:job:${moment().add(index * step, 'ms').format('YYYYMMDDHHmmssSSS')}:${index}`;
+            db.set(key, job);
+            jobs.push(job);
+        });
+    });
+    log(`添加用户数量：${userCount}`);
+    log(`添加URL数量：${linkCount}`)
+    log('任务添加完毕：第一个任务将在10秒后启动');
+}
+
+async function exec(shotUrls = [], users = []) {
     const task = (allResult, user) => {
         return new Promise((resolve, reject) => {
-            log(`执行任务：${JSON.stringify(user)}`);
+            log(`执行任务：${user.name}`);
             rate(shotUrls, user).then(res => {
                 allResult.push(res);
-                log(`任务完成：${JSON.stringify(user)}`);
+                log(`任务完成：${user.name} - ${shotUrls}`);
                 // 任务执行完成
                 resolve(allResult);
             });
@@ -258,22 +310,93 @@ module.exports = async function exec(shotUrls = [], users =[]) {
     return promise;
 }
 
+async function runTask() {
+    const next = moment().add(nexJobRange, 'ms').format('YYYYMMDDHHmmssSSS');
+    const current = moment().format('YYYYMMDDHHmmssSSS');
+    const currentDateArray = current.split('');
+    let sign = false;
+    const dateRegex = next.split('').map((nextNumber, index) => {
+        const currentNumber = currentDateArray[index];
+        if (sign) {
+            return '[0-9]';
+        } else if (currentNumber === nextNumber) {
+            return currentNumber.toString();
+        } else if (nextNumber > currentNumber) {
+            sign = true;
+            return `[${[currentDateArray[index], nextNumber].sort((a, b) => a > b).join('-')}]`
+        }
+    });
+    const regexStr = dateRegex.join('');
+    const dbkeys = `dribbble_tool:job:${regexStr}*`;
+    // 1. 从redis 获取出任务
+    const keys = await db.keys(dbkeys);
+    const values = await Promise.all(keys.map(async key => db.get(key)));
+    // 开始执行任务
+    const jobs = keys.map((key, index) => {
+        const value = values[index];
+        return {
+            key,
+            ...value
+        }
+    });
+    if(keys.length > 0) {
+        execJobs(jobs);
+    } else {
+        log(`接下来${Math.ceil(nexJobRange/1000)}秒没有任务可以执行,系统将在${Math.ceil(delay/1000)}秒后再次检测`);
+    }
+}
 
-const shotUrls = [
-    'https://dribbble.com/shots/4407163-Dribbble-Sticker-Pack',
-    'https://dribbble.com/shots/4403863-Timeline-Illustrations',
-    'https://dribbble.com/shots/4407322-About-Page-for-an-iPad-3D-Sketching-Platform-Website',
-    'https://dribbble.com/shots/4407877-Makeup-Academy-Homepage-Animation'
-];
+async function getOverJobCount(){
+    const keys = await db.keys('dribbble_tool:job:*');
+    return Promise.resolve(keys.length);
+}
+
+async function execJobs(jobs = []) {
+    const task = async (allResult, job) => {
+        return new Promise(async (resolve, reject) => {
+            const user = job.user;
+            const shotUrl = job.url;
+            const result = await exec([shotUrl], [user]);
+            console.log('任务完成...' + job.key);
+            // 删除key
+            db.del(job.key);
+            if (result) {
+                allResult.push(result);
+                resolve(allResult);
+            }
+        });
+    };
+    const promise = jobs.reduce((promise, job) => {
+        return promise.then((allResult = []) => task(allResult, job));
+    }, Promise.resolve());
+    return promise;
+}
 
 /**
- * 获取一个测试账号
+ * 休眠
+ * @param {number} time 休眠时间
  */
-const testUsers = [
-    { name: '1757914094@qq.com', password: 'abc123' },
-    { name: '242546279@qq.com', password: 'abc123' },
-    { name: '1593574860@qq.com', password: 'abc123' },
-    { name: '1490659434@qq.com', password: 'abc123' }
-];
+async function sleep(time = 0) {
+    return new Promise((resolve, reject) => {
+        setTimeout(() => resolve(), time);
+    })
+}
 
-// exec(shotUrls,testUsers);
+
+
+/**
+ * 执行任务
+ */
+async function run() {
+    const overJobCount = await getOverJobCount();
+    log('系统启动...');
+    log(`当前剩余任务数量 ${overJobCount}`);
+    timer = setInterval(function () {
+        runTask();
+    }, delay);
+}
+
+run();
+runTask();
+
+module.exports = { addJob, exec };
