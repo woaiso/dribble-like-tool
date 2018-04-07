@@ -197,8 +197,8 @@
             </div>
             <div class="log">
                 <h2 class="title">日志</h2>
-                <div class="log-content">
-                    <div class="log-item" v-for="log in logs">{{log}}</div>
+                <div class="log-content" id="log-content">
+                    <div class="log-item" v-for="log in logs">{{log.message}}</div>
                 </div>
             </div>
         </div>

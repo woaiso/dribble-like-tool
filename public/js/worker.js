@@ -18,6 +18,9 @@ const app = new Vue({
         logs: []
     },
     created: function(){
+        this.timer = setInterval(()=>{
+            this.getLogs();
+        }, 5000); //5秒执行一次
         this.getLogs();
     },
     methods: {
@@ -73,13 +76,18 @@ const app = new Vue({
             })
         },
         getLogs: function () {
+            const lastkey = this.logs.length > 0 ? this.logs.length : '';
             axios.post('/logs', {
-                lastkey: null
+                lastkey: lastkey
             }).then(res => {
                 const { data } = res
                 if(+data.code === 0) {
                     this.logs = this.logs.concat(data.data);
                     console.log(this.logs);
+                    setTimeout(()=>{
+                        const logContent = document.getElementById('log-content');
+                        logContent.scrollTo({top: 10000});
+                    }, 100);
                 } else {
                     console.log('日志获取失败');
                 }

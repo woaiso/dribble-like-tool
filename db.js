@@ -82,7 +82,22 @@ client.on("error", function (err) {
   console.log("Error " + err);
 });
 
-module.exports = { set, get, keys, del, zadd };
+
+async function zrange(key, start, stop) {
+  return new Promise((resolve, reject) => {
+    console.log(start, stop);
+    client.zrange(key, start, stop, 'WITHSCORES', (err, reply) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(reply);
+      }
+    })
+  })
+}
+
+
+module.exports = { set, get, keys, del, zadd, zrange };
 
 async function test() {
   set('dribbble:worker_1', {

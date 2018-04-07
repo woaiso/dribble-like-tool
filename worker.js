@@ -40,13 +40,19 @@ function getTime(format) {
     }
 }
 
+let logIndex = 10;
+const maxLogIndex = 40;
+
 function log(message) {
     if (typeof message === 'object') {
         message = JSON.stringify(message);
     }
-    const key = `dribbble_tool:log:${getTime('YmdHisms')}:${Math.ceil(Math.random() * 1000)}`;
+    const key = `dribbble_tool:log:${getTime('YYYYMMDD')}`;
     const value = `[${getTime('YYYY-MM-DD HH:mm:ss')}] ${message}`;
-    db.zadd(`dribbble_tool:log:${getTime('YYYYMMDD')}`,getTime('mmssSSS') + ''+ Math.ceil(Math.random() * 1000 + 1000) ,value)
+    db.zadd(key, getTime('HHmmssSSS') + logIndex++, value);
+    if(logIndex>maxLogIndex) {
+        logIndex = 10;
+    }
     console.log(value);
 }
 /**
@@ -289,7 +295,6 @@ async function addJob(links = [], users = []) {
     });
     log(`添加用户数量：${userCount}`);
     log(`添加URL数量：${linkCount}`)
-    log('任务添加完毕：第一个任务将在10秒后启动');
 }
 
 async function exec(shotUrls = [], users = []) {
@@ -357,7 +362,6 @@ async function execJobs(jobs = []) {
             const user = job.user;
             const shotUrl = job.url;
             const result = await exec([shotUrl], [user]);
-            console.log('任务完成...' + job.key);
             // 删除key
             db.del(job.key);
             if (result) {
