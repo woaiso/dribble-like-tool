@@ -165,25 +165,30 @@ async function login(user) {
             }
         }).then(res => {
             const html = res.data;
-            const profileName = $(html).find('.profile-name').text();
-            resolve({ profileName });
+            const dom = $(html);
+            const userName = dom.find('#t-profile .has-sub').attr('href').replace(/^\//,'');
+            const nickName = dom.find('.profile-name').text();
+            resolve({ userName, nickName });
         }, reject)
     });
 }
 
 /**
- * 获取防跨站脚本攻击token
- * @param {string} shotUrl 获取防跨站脚本攻击功能
+ * 获取作品的详细信息
+ * @param {string} shotUrl 作品URL
  */
-async function getcsrfToken(shotUrl) {
+async function getShotInfo(shotUrl) {
     return new Promise((resolve, reject) => {
         request({
             url: shotUrl
         }).then(res => {
             const html = res.data;
-            // writeFile(`csrf-token-${new Date().getTime()}.html`, html);
+            const dom = $(html);
             const csrfToken = $.load(html)('meta[name=csrf-token]').attr('content');
-            if (csrfToken) { resolve(csrfToken) } else {
+            const likes = dom.find('.likes-count.stats-num').children().remove().end().text().trim();
+            const views = dom.find('.shot-stats-views-for-mobile .stats-num.views-count').children().remove().end().text().trim().replace(/[^\d]/, '');
+            const buckets = dom.find('.stats-num.buckets-count').children().remove().end().text().trim().replace(/[^\d]/, '');
+            if (csrfToken) { resolve({likes, views, buckets, csrfToken}) } else {
                 reject('未获取到csrfToken');
             }
         }, reject);
@@ -192,12 +197,12 @@ async function getcsrfToken(shotUrl) {
 
 /**
  * 点赞
- * @param {string} profileName 当前登录用户的ID
+ * @param {string} userName 当前登录用户的ID
  * @param {string} screenshotId 作品ID
  * @param {string} referer 当前作品的URL
  */
-async function like(profileName, screenshotId, referer, csrfToken) {
-    const url = `https://dribbble.com/${profileName}/likes?screenshot_id=${screenshotId}`;
+async function like(userName, screenshotId, referer, csrfToken) {
+    const url = `https://dribbble.com/${userName}/likes?screenshot_id=${screenshotId}`;
     return new Promise((resolve, reject) => {
         request({
             url,
@@ -235,9 +240,8 @@ async function getUserInfo(passport) {
         const token = await getAuthToken();
         log('token：' + token);
         passport = { ...passport, token };
-        log('passport：' + JSON.stringify(passport));
         const userInfo = await login(passport);
-        log('profileName：' + userInfo.profileName);
+        log('userName：' + userInfo.userName + '   nickName：' + userInfo.nickName);
         if (userInfo) {
             resolve(userInfo);
         } else {
@@ -255,9 +259,10 @@ async function rate(shotUrls = [], user) {
     if (shotUrls && user) {
         const userInfo = await getUserInfo(user);
         return Promise.all(shotUrls.map(async url => {
-            const csrfToken = await getcsrfToken(url);
+            const {csrfToken, likes, views, buckets} = await getShotInfo(url);
             log('x-csrf-token：' + csrfToken);
-            const likeNum = await like(userInfo.profileName, getShotId(url), url, csrfToken);
+            log(`当前like:${likes} 当前views:${views} buckets:${buckets}`);
+            const likeNum = await like(userInfo.userName, getShotId(url), url, csrfToken);
             log('点赞后❤️：' + likeNum);
         }))
     } else {
@@ -400,7 +405,7 @@ async function run() {
     }, delay);
 }
 
-run();
-runTask();
+// run();
+// runTask();
 
 module.exports = { addJob, exec };

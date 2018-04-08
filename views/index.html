@@ -165,6 +165,9 @@
                     <select name="loopTime" id="loopTime" v-model="link.loop">
                         <option value="12">12个小时</option>
                         <option value="6">6个小时</option>
+                        <option value="3">3个小时</option>
+                        <option value="1">1个小时</option>
+                        <option value="0.12">5分钟(用于测试)</option>
                     </select>
                     <button class="delete-button" title="删除当前这条数据" v-if="links.length > 1" v-on:click="deleteLink(index)"/>
                 </div>
