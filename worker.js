@@ -405,7 +405,7 @@ async function run() {
     }, delay);
 }
 
-// run();
-// runTask();
+run();
+runTask();
 
 module.exports = { addJob, exec };

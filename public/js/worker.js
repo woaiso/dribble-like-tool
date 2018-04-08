@@ -9,7 +9,7 @@ const app = new Vue({
         maxLinkCount: 20, // 允许的最大链接数量
         maxUserCount: 20, // 允许的最大用户数量
         links: [
-            { url: 'https://dribbble.com/shots/3633577-Fruit-App-03', loop: '6' },
+            { url: 'https://dribbble.com/shots/4423381-Jiedian-logo', loop: '6' },
         ],
         users: [
             { name: '', password: '' }
