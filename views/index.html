@@ -135,6 +135,12 @@
             display: flex;
         }
 
+        .passport-table {
+            display: flex;
+            height: 300px;
+            overflow: auto;
+        }
+
         .passport-area textarea {
             flex: 1;
             border: 1px solid #d8d8d8;
@@ -151,6 +157,23 @@
             font-family: Courier New, Consolas, Menlo;
             color: #333;
         }
+        .table {
+            width: 100%;
+            text-align: left;
+            border-collapse: collapse;
+            padding: 2px;
+            font-size: 12px;
+        }
+        .table thead{
+            background: #eee;
+        }
+        .table tbody {
+            background: #f1f1f1;
+        }
+        .table td, .table th{
+            padding:4px;
+        }
+        table,table tr th, table tr td { border:1px solid #e8e8e8; }
     </style>
 </head>
 
@@ -172,6 +195,22 @@
                     <button class="delete-button" title="删除当前这条数据" v-if="links.length > 1" v-on:click="deleteLink(index)"/>
                 </div>
             </div>
+            <h3 class="sub-title">服务端目前存储的账号密码</h3>
+            <div class="passport passport-table">
+                <table class="table" cols>
+                    <thead>
+                        <tr><th style="width:30px;">序号</th><th>账号</th><th>密码</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="(user, index) in usersOnServer">
+                            <td>{{index+1}}</td>
+                            <td>{{user.name}}</td>
+                            <td>{{user.password}}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
             <h3 class="sub-title">配置账号密码（批量导入）</h3>
             <div class="passport passport-area">
                 <textarea v-model="multiplePassport" placeholder="导入样例一行一个账号密码：&#10;10086@qq.com 123456&#10;10010@qq.com 123456" cols="30" rows="10"></textarea>

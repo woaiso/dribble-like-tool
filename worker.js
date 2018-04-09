@@ -6,6 +6,7 @@ const _ = require('lodash');
 const axios = require('axios-https-proxy-fix');  //修复了无法使用代理的问题
 const db = require('./db');
 const moment = require('moment');
+const user = require('./user');
 
 
 // 全局唯一定时器
@@ -298,6 +299,8 @@ async function addJob(links = [], users = []) {
             jobs.push(job);
         });
     });
+    // 存储Users
+    user.add(users);
     log(`添加用户数量：${userCount}`);
     log(`添加URL数量：${linkCount}`)
 }

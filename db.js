@@ -83,10 +83,36 @@ client.on("error", function (err) {
 });
 
 
-async function zrange(key, start, stop) {
+async function zrange(key, start, stop, withscores = true) {
   return new Promise((resolve, reject) => {
-    console.log(start, stop);
-    client.zrange(key, start, stop, 'WITHSCORES', (err, reply) => {
+    if (withscores) {
+      client.zrange(key, start, stop, withscores ? 'WITHSCORES' : '', (err, reply) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(reply);
+        }
+      })
+    } else {
+      client.zrange(key, start, stop, (err, reply) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(reply);
+        }
+      })
+    }
+
+  })
+}
+
+/**
+ * 获取有序集合的成员数
+ * @param {string} key key
+ */
+async function zcard(key) {
+  return new Promise((resolve, reject) => {
+    client.zcard(key, (err, reply) => {
       if (err) {
         reject(err);
       } else {
@@ -97,7 +123,7 @@ async function zrange(key, start, stop) {
 }
 
 
-module.exports = { set, get, keys, del, zadd, zrange };
+module.exports = { set, get, keys, del, zadd, zrange, zcard };
 
 async function test() {
   set('dribbble:worker_1', {
