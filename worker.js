@@ -16,7 +16,7 @@ const delay = 10 * 60 * 1000; // 10分钟执行一次
 
 const nexJobRange = 1 * 60 * 60 * 1000 // 获取接下来多少时间内的任务，暂定获取接下来一分钟内的任务
 
-const sleepTime = 1000; // 执行完一次请求的休眠时间
+const sleepTime = 3000; // 执行完一次请求的休眠时间
 
 
 /**
@@ -51,7 +51,7 @@ function log(message) {
     const key = `dribbble_tool:log:${getTime('YYYYMMDD')}`;
     const value = `[${getTime('YYYY-MM-DD HH:mm:ss')}] ${message}`;
     db.zadd(key, getTime('HHmmssSSS') + logIndex++, value);
-    if(logIndex>maxLogIndex) {
+    if (logIndex > maxLogIndex) {
         logIndex = 10;
     }
     console.log(value);
@@ -84,6 +84,7 @@ async function request(options) {
             },
             headers: {
                 referer: options.url,
+                'X-Forwarded-For': '121.168.0.' + Math.ceil(Math.random() * 200) + 10,
                 'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/65.0.3325.162 Safari/537.36',
             },
             // proxy: {
@@ -167,9 +168,13 @@ async function login(user) {
         }).then(res => {
             const html = res.data;
             const dom = $(html);
-            const userName = dom.find('#t-profile .has-sub').attr('href').replace(/^\//,'');
             const nickName = dom.find('.profile-name').text();
-            resolve({ userName, nickName });
+            if (nickName && nickName !== '') {
+                const userName = dom.find('#t-profile .has-sub').attr('href').replace(/^\//, '');
+                resolve({ userName, nickName });
+            } else {
+                reject('账号密码错误');
+            }
         }, reject)
     });
 }
@@ -189,7 +194,7 @@ async function getShotInfo(shotUrl) {
             const likes = dom.find('.likes-count.stats-num').children().remove().end().text().trim();
             const views = dom.find('.shot-stats-views-for-mobile .stats-num.views-count').children().remove().end().text().trim().replace(/[^\d]/, '');
             const buckets = dom.find('.stats-num.buckets-count').children().remove().end().text().trim().replace(/[^\d]/, '');
-            if (csrfToken) { resolve({likes, views, buckets, csrfToken}) } else {
+            if (csrfToken) { resolve({ likes, views, buckets, csrfToken }) } else {
                 reject('未获取到csrfToken');
             }
         }, reject);
@@ -241,13 +246,18 @@ async function getUserInfo(passport) {
         const token = await getAuthToken();
         log('token：' + token);
         passport = { ...passport, token };
-        const userInfo = await login(passport);
-        log('userName：' + userInfo.userName + '   nickName：' + userInfo.nickName);
-        if (userInfo) {
-            resolve(userInfo);
-        } else {
-            reject(new Error('未获取到正确的用户信息'));
+        try {
+            const userInfo = await login(passport);
+            log('userName：' + userInfo.userName + '   nickName：' + userInfo.nickName);
+            if (userInfo) {
+                resolve(userInfo);
+            } else {
+                reject(new Error('未获取到正确的用户信息'));
+            }
+        } catch (e) {
+            reject(e);
         }
+
     });
 }
 
@@ -260,7 +270,7 @@ async function rate(shotUrls = [], user) {
     if (shotUrls && user) {
         const userInfo = await getUserInfo(user);
         return Promise.all(shotUrls.map(async url => {
-            const {csrfToken, likes, views, buckets} = await getShotInfo(url);
+            const { csrfToken, likes, views, buckets } = await getShotInfo(url);
             log('x-csrf-token：' + csrfToken);
             log(`当前like:${likes} 当前views:${views} buckets:${buckets}`);
             const likeNum = await like(userInfo.userName, getShotId(url), url, csrfToken);
@@ -352,14 +362,14 @@ async function runTask() {
             ...value
         }
     });
-    if(keys.length > 0) {
+    if (keys.length > 0) {
         execJobs(jobs);
     } else {
-        log(`接下来${Math.ceil(nexJobRange/1000)}秒没有任务可以执行,系统将在${Math.ceil(delay/1000)}秒后再次检测`);
+        log(`接下来${Math.ceil(nexJobRange / 1000)}秒没有任务可以执行,系统将在${Math.ceil(delay / 1000)}秒后再次检测`);
     }
 }
 
-async function getOverJobCount(){
+async function getOverJobCount() {
     const keys = await db.keys('dribbble_tool:job:*');
     return Promise.resolve(keys.length);
 }
@@ -400,6 +410,7 @@ async function sleep(time = 0) {
  * 执行任务
  */
 async function run() {
+    runTask();
     const overJobCount = await getOverJobCount();
     log('系统启动...');
     log(`当前剩余任务数量 ${overJobCount}`);
@@ -408,7 +419,6 @@ async function run() {
     }, delay);
 }
 
-run();
-runTask();
 
-module.exports = { addJob, exec };
+
+module.exports = { addJob, exec, getUserInfo, sleep, run };

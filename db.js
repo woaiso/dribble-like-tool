@@ -122,8 +122,24 @@ async function zcard(key) {
   })
 }
 
+/**
+ * 获取有序集合的成员数
+ * @param {string} key key
+ */
+async function zrem(key, member) {
+  return new Promise((resolve, reject) => {
+    client.zrem(key,member, (err, reply) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(reply);
+      }
+    })
+  })
+}
 
-module.exports = { set, get, keys, del, zadd, zrange, zcard };
+
+module.exports = { set, get, keys, del, zadd, zrange, zcard, zrem };
 
 async function test() {
   set('dribbble:worker_1', {
