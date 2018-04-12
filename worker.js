@@ -14,7 +14,7 @@ let timer = null;
 // 定时器执行时间间隔
 const delay = 10 * 60 * 1000; // 10分钟执行一次
 
-const nexJobRange = 1 * 60 * 60 * 1000 // 获取接下来多少时间内的任务，暂定获取接下来一分钟内的任务
+const nexJobRange = 10 * 60 * 1000 // 获取接下来多少时间内的任务，暂定获取接下来一分钟内的任务
 
 const sleepTime = 3000; // 执行完一次请求的休眠时间
 
@@ -268,14 +268,19 @@ async function getUserInfo(passport) {
  */
 async function rate(shotUrls = [], user) {
     if (shotUrls && user) {
-        const userInfo = await getUserInfo(user);
-        return Promise.all(shotUrls.map(async url => {
-            const { csrfToken, likes, views, buckets } = await getShotInfo(url);
-            log('x-csrf-token：' + csrfToken);
-            log(`当前like:${likes} 当前views:${views} buckets:${buckets}`);
-            const likeNum = await like(userInfo.userName, getShotId(url), url, csrfToken);
-            log('点赞后❤️：' + likeNum);
-        }))
+        try{
+            const userInfo = await getUserInfo(user);
+            return Promise.all(shotUrls.map(async url => {
+                const { csrfToken, likes, views, buckets } = await getShotInfo(url);
+                log('x-csrf-token：' + csrfToken);
+                log(`当前like:${likes} 当前views:${views} buckets:${buckets}`);
+                const likeNum = await like(userInfo.userName, getShotId(url), url, csrfToken);
+                log('点赞后❤️：' + likeNum);
+            }))
+        } catch(e) {
+            reject('处理失败');
+        }
+        
     } else {
         return Promise.reject('请传入正确的URL和用户');
     }
@@ -323,6 +328,9 @@ async function exec(shotUrls = [], users = []) {
                 allResult.push(res);
                 log(`任务完成：${user.name} - ${shotUrls}`);
                 // 任务执行完成
+                resolve(allResult);
+            }, (err)=>{
+                allResult.push('任务未完成');
                 resolve(allResult);
             });
         });
