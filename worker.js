@@ -314,8 +314,6 @@ async function addJob(links = [], users = []) {
             jobs.push(job);
         });
     });
-    // 存储Users
-    user.add(users);
     log(`添加用户数量：${userCount}`);
     log(`添加URL数量：${linkCount}`)
 }
