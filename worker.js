@@ -429,4 +429,4 @@ async function run() {
 
 
 
-module.exports = { addJob, exec, getUserInfo, sleep, run };
+module.exports = { addJob, exec, getUserInfo, sleep, run, writeFile };
