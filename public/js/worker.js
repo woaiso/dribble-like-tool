@@ -19,9 +19,9 @@ const app = new Vue({
         usersOnServer: []
     },
     created: function () {
-        this.timer = setInterval(() => {
-            this.getLogs();
-        }, 5000); //5秒执行一次
+        // this.timer = setInterval(() => {
+        //     this.getLogs();
+        // }, 5000); //5秒执行一次
         this.getLogs();
         this.getUsers();
     },
